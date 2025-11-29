@@ -32,15 +32,14 @@ body {
 
 .app-container {
   height: 100vh;
-  width: 100vw; /* Force full viewport width */
+  width: 100vw;
   display: flex;
   flex-direction: column;
-  background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95)), url('/whatsapp_bg.png');
-  background-size: 400px; /* Tile the pattern */
-  background-repeat: repeat;
+  background-image: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8)), url('/background.png');
+  background-size: cover;
   background-position: center;
   background-attachment: fixed;
-  overflow: hidden; /* Prevent body scroll */
+  overflow: hidden;
 }
 
 /* Login Screen */
@@ -50,10 +49,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: linear-gradient(rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.9)), url('/whatsapp_bg.png');
-  background-size: 400px; /* Tile the pattern */
-  background-repeat: repeat;
-  background-position: center;
+  background: transparent; /* Inherit from app-container */
   position: relative;
   overflow: hidden;
 }
@@ -63,10 +59,12 @@ body {
 /* Chat Layout */
 .chat-room {
   display: flex;
-  height: 100%; /* Fill parent height */
-  width: 100%; /* Fill parent width */
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(20px);
+  height: 100%;
+  width: 100%;
+  background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95)), url('/whatsapp_bg.png');
+  background-size: 400px;
+  background-repeat: repeat;
+  background-position: center;
   overflow: hidden;
 }
 

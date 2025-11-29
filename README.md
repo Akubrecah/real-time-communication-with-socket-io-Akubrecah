@@ -2,7 +2,7 @@
 
 A full-featured real-time chat application built with the MERN stack (MongoDB, Express, React, Node.js) and Socket.io. This application supports real-time messaging, multiple rooms, private messaging, image sharing, and a modern, responsive UI with dark mode.
 
-![Chat Interface](file:///home/akubrecah/.gemini/antigravity/brain/2e770904-ad9f-4984-9988-5cd8a6870990/chat_interface_1764430100523.png)
+![Chat Interface](./screenshots/chat_interface.png)
 
 ## Features
 
@@ -93,13 +93,13 @@ Access the application at `http://localhost:5173`.
 ## Screenshots
 
 ### Login Page
-![Login Page](file:///home/akubrecah/.gemini/antigravity/brain/2e770904-ad9f-4984-9988-5cd8a6870990/login_page_1764429913132.png)
+![Login Page](./screenshots/login_page.png)
 
 ### Register Page
-![Register Page](file:///home/akubrecah/.gemini/antigravity/brain/2e770904-ad9f-4984-9988-5cd8a6870990/register_page_1764429996712.png)
+![Register Page](./screenshots/register_page.png)
 
 ### Chat Interface
-![Chat Interface](file:///home/akubrecah/.gemini/antigravity/brain/2e770904-ad9f-4984-9988-5cd8a6870990/chat_interface_1764430100523.png)
+![Chat Interface](./screenshots/chat_interface.png)
 
 ## Project Structure
 

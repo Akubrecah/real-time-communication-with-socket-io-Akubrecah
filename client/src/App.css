@@ -35,8 +35,9 @@ body {
   width: 100vw; /* Force full viewport width */
   display: flex;
   flex-direction: column;
-  background-image: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8)), url('/background.png');
-  background-size: cover;
+  background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95)), url('/whatsapp_bg.png');
+  background-size: 400px; /* Tile the pattern */
+  background-repeat: repeat;
   background-position: center;
   background-attachment: fixed;
   overflow: hidden; /* Prevent body scroll */
@@ -49,8 +50,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: linear-gradient(rgba(2, 6, 23, 0.5), rgba(2, 6, 23, 0.7)), url('/background.png');
-  background-size: cover;
+  background-image: linear-gradient(rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.9)), url('/whatsapp_bg.png');
+  background-size: 400px; /* Tile the pattern */
+  background-repeat: repeat;
   background-position: center;
   position: relative;
   overflow: hidden;

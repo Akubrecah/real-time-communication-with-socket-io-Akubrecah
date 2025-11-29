@@ -17,10 +17,15 @@ export const socket = io(SOCKET_URL, {
 // Custom hook for using socket.io
 export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [lastMessage, setLastMessage] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [privateMessages, setPrivateMessages] = useState({}); // { userId: [messages] }
   const [users, setUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [currentRoom, setCurrentRoom] = useState(null); // null = global
+  const [unreadCounts, setUnreadCounts] = useState({});
+
+  // Sound effect
+  const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2346/2346-preview.mp3');
 
   // Connect to socket server
   const connect = (username) => {
@@ -33,21 +38,67 @@ export const useSocket = () => {
   // Disconnect from socket server
   const disconnect = () => {
     socket.disconnect();
+    setMessages([]);
+    setPrivateMessages({});
+    setCurrentRoom(null);
+    setUnreadCounts({});
+  };
+
+  // Join a room
+  const joinRoom = (room) => {
+    if (currentRoom) {
+      socket.emit('leave_room', currentRoom);
+    }
+    socket.emit('join_room', room);
+    setCurrentRoom(room);
+    setMessages([]); // Clear messages when switching rooms (optional)
+  };
+
+  // Leave a room (return to global)
+  const leaveRoom = () => {
+    if (currentRoom) {
+      socket.emit('leave_room', currentRoom);
+      setCurrentRoom(null);
+      setMessages([]);
+    }
   };
 
   // Send a message
   const sendMessage = (message) => {
-    socket.emit('send_message', { message });
+    socket.emit('send_message', { message, room: currentRoom });
   };
 
   // Send a private message
   const sendPrivateMessage = (to, message) => {
     socket.emit('private_message', { to, message });
+    // Optimistically add to local state
+    const myMsg = {
+      id: Date.now(),
+      sender: 'Me',
+      senderId: socket.id,
+      message,
+      timestamp: new Date().toISOString(),
+      isPrivate: true,
+      to
+    };
+    setPrivateMessages(prev => ({
+      ...prev,
+      [to]: [...(prev[to] || []), myMsg]
+    }));
   };
 
   // Set typing status
   const setTyping = (isTyping) => {
-    socket.emit('typing', isTyping);
+    socket.emit('typing', { isTyping, room: currentRoom });
+  };
+
+  // Mark messages as read
+  const markAsRead = (userId) => {
+    setUnreadCounts(prev => {
+      const newCounts = { ...prev };
+      delete newCounts[userId];
+      return newCounts;
+    });
   };
 
   // Socket event listeners
@@ -63,13 +114,49 @@ export const useSocket = () => {
 
     // Message events
     const onReceiveMessage = (message) => {
-      setLastMessage(message);
-      setMessages((prev) => [...prev, message]);
+      // If message belongs to current room (or global if currentRoom is null)
+      if (message.room === currentRoom || (!message.room && !currentRoom)) {
+        setMessages((prev) => [...prev, message]);
+        
+        // Play sound for incoming messages (not from self)
+        if (message.senderId !== socket.id) {
+          notificationSound.play().catch(e => console.error("Audio play failed", e));
+          
+          // Browser notification if hidden
+          if (document.hidden && Notification.permission === 'granted') {
+            new Notification(`New message in ${message.room ? '#' + message.room : 'Global Chat'}`, {
+              body: `${message.sender}: ${message.message}`
+            });
+          }
+        }
+      }
     };
 
     const onPrivateMessage = (message) => {
-      setLastMessage(message);
-      setMessages((prev) => [...prev, message]);
+      const otherId = message.senderId === socket.id ? message.to : message.senderId;
+      setPrivateMessages(prev => ({
+        ...prev,
+        [otherId]: [...(prev[otherId] || []), message]
+      }));
+
+      // Handle notifications for received messages
+      if (message.senderId !== socket.id) {
+        // Increment unread count
+        setUnreadCounts(prev => ({
+          ...prev,
+          [message.senderId]: (prev[message.senderId] || 0) + 1
+        }));
+
+        // Play sound
+        notificationSound.play().catch(e => console.error("Audio play failed", e));
+
+        // Browser notification
+        if (Notification.permission === 'granted') {
+          new Notification(`Private message from ${message.sender}`, {
+            body: message.message
+          });
+        }
+      }
     };
 
     // User events
@@ -78,34 +165,47 @@ export const useSocket = () => {
     };
 
     const onUserJoined = (user) => {
-      // You could add a system message here
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          system: true,
-          message: `${user.username} joined the chat`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      // Only show global join messages if in global chat
+      if (!currentRoom) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            system: true,
+            message: `${user.username} joined the chat`,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      }
     };
 
     const onUserLeft = (user) => {
-      // You could add a system message here
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          system: true,
-          message: `${user.username} left the chat`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      if (!currentRoom) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            system: true,
+            message: `${user.username} left the chat`,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      }
     };
 
     // Typing events
-    const onTypingUsers = (users) => {
-      setTypingUsers(users);
+    const onTypingUpdate = ({ userId, username, isTyping, room }) => {
+      // Filter by current room
+      if (room !== currentRoom && (room || currentRoom)) return;
+      
+      setTypingUsers(prev => {
+        if (isTyping) {
+          if (!prev.includes(username)) return [...prev, username];
+          return prev;
+        } else {
+          return prev.filter(u => u !== username);
+        }
+      });
     };
 
     // Register event listeners
@@ -116,7 +216,7 @@ export const useSocket = () => {
     socket.on('user_list', onUserList);
     socket.on('user_joined', onUserJoined);
     socket.on('user_left', onUserLeft);
-    socket.on('typing_users', onTypingUsers);
+    socket.on('typing_update', onTypingUpdate);
 
     // Clean up event listeners
     return () => {
@@ -127,22 +227,27 @@ export const useSocket = () => {
       socket.off('user_list', onUserList);
       socket.off('user_joined', onUserJoined);
       socket.off('user_left', onUserLeft);
-      socket.off('typing_users', onTypingUsers);
+      socket.off('typing_update', onTypingUpdate);
     };
-  }, []);
+  }, [currentRoom]); // Re-run effect when room changes to ensure correct filtering
 
   return {
     socket,
     isConnected,
-    lastMessage,
     messages,
+    privateMessages,
     users,
     typingUsers,
+    currentRoom,
+    unreadCounts,
     connect,
     disconnect,
+    joinRoom,
+    leaveRoom,
     sendMessage,
     sendPrivateMessage,
     setTyping,
+    markAsRead,
   };
 };
 

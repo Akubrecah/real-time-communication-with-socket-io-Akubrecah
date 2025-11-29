@@ -28,7 +28,14 @@ const MessageList = ({ messages, currentUserId, typingUsers }) => {
               <span className="message-time">{formatTime(msg.timestamp)}</span>
             </div>
           )}
-          <div className="message-content">{msg.message}</div>
+          <div className="message-content">
+            {msg.image && (
+              <div className="message-image">
+                <img src={msg.image} alt="Shared" />
+              </div>
+            )}
+            {msg.message && <p>{msg.message}</p>}
+          </div>
         </div>
       ))}
       

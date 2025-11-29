@@ -74,10 +74,11 @@ io.on('connection', (socket) => {
 
   // Handle chat messages (Global or Room)
   socket.on('send_message', (messageData) => {
-    const { room, message: content } = messageData;
+    const { room, message: content, image } = messageData;
     
     const message = {
       message: content,
+      image, // Add image to message object
       id: Date.now(),
       sender: users[socket.id]?.username || 'Anonymous',
       senderId: socket.id,
@@ -121,12 +122,13 @@ io.on('connection', (socket) => {
   });
 
   // Handle private messages
-  socket.on('private_message', ({ to, message }) => {
+  socket.on('private_message', ({ to, message, image }) => {
     const messageData = {
       id: Date.now(),
       sender: users[socket.id]?.username || 'Anonymous',
       senderId: socket.id,
       message,
+      image, // Add image to private message object
       timestamp: new Date().toISOString(),
       isPrivate: true,
       to // Add recipient ID for client-side handling

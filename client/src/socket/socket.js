@@ -64,19 +64,20 @@ export const useSocket = () => {
   };
 
   // Send a message
-  const sendMessage = (message) => {
-    socket.emit('send_message', { message, room: currentRoom });
+  const sendMessage = (message, image = null) => {
+    socket.emit('send_message', { message, image, room: currentRoom });
   };
 
   // Send a private message
-  const sendPrivateMessage = (to, message) => {
-    socket.emit('private_message', { to, message });
+  const sendPrivateMessage = (to, message, image = null) => {
+    socket.emit('private_message', { to, message, image });
     // Optimistically add to local state
     const myMsg = {
       id: Date.now(),
       sender: 'Me',
       senderId: socket.id,
       message,
+      image,
       timestamp: new Date().toISOString(),
       isPrivate: true,
       to

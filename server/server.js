@@ -1,18 +1,31 @@
+```javascript
 // server.js - Main server file for Socket.io chat application
 
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const dotenv = require('dotenv');
+const mongoose = require('mongoose');
+const authRoutes = require('./routes/auth');
+require('dotenv').config();
 const path = require('path');
-
-// Load environment variables
-dotenv.config();
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Database Connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log(err));
+
+// Routes
+app.use('/api/auth', authRoutes);
+
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -21,9 +34,7 @@ const io = new Server(server, {
   },
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Middleware (additional)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Store connected users and messages

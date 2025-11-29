@@ -1,6 +1,9 @@
-import { useState } from 'react';
-import { useSocket } from './socket/socket';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import ChatRoom from './components/ChatRoom';
+import Login from './components/Login';
+import Register from './components/Register';
+import { useSocket } from './socket/socket';
 import './App.css';
 
 function App() {
@@ -23,29 +26,41 @@ function App() {
     markAsRead
   } = useSocket();
   
-  const [username, setUsername] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' or 'private'
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('rooms');
   const [selectedUser, setSelectedUser] = useState(null);
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (username.trim()) {
-      connect(username);
-      setIsLoggedIn(true);
-      // Request notification permission
-      if (Notification.permission !== 'granted') {
-        Notification.requestPermission();
-      }
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
+    if (storedUser && storedToken) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      connect(parsedUser.username);
+    }
+  }, []);
+
+  const handleLogin = (userData, token) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('token', token);
+    setUser(userData);
+    connect(userData.username);
+    navigate('/chat');
+    
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
     }
   };
 
   const handleLogout = () => {
     disconnect();
-    setIsLoggedIn(false);
-    setUsername('');
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUser(null);
     setActiveTab('rooms');
     setSelectedUser(null);
+    navigate('/login');
   };
 
   const handleUserSelect = (user) => {
@@ -68,44 +83,38 @@ function App() {
 
   return (
     <div className="app-container">
-      {!isLoggedIn ? (
-        <div className="login-screen">
-          <div className="login-container">
-            <h1>Socket.io Chat</h1>
-            <p>Join the conversation</p>
-            <form onSubmit={handleLogin}>
-              <input
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoFocus
+      <Routes>
+        <Route path="/login" element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/chat" />} />
+        <Route path="/register" element={!user ? <Register onLogin={handleLogin} /> : <Navigate to="/chat" />} />
+        <Route 
+          path="/chat" 
+          element={
+            user ? (
+              <ChatRoom 
+                messages={messages}
+                privateMessages={privateMessages}
+                users={users}
+                typingUsers={typingUsers}
+                currentUserId={socket?.id}
+                currentRoom={currentRoom}
+                unreadCounts={unreadCounts}
+                activeTab={activeTab}
+                selectedUser={selectedUser}
+                onSendMessage={sendMessage}
+                onSendPrivateMessage={sendPrivateMessage}
+                onJoinRoom={handleJoinRoom}
+                onLeaveRoom={handleLeaveRoom}
+                onTyping={setTyping}
+                onLogout={handleLogout}
+                onSelectUser={handleUserSelect}
               />
-              <button type="submit">Join Chat</button>
-            </form>
-          </div>
-        </div>
-      ) : (
-        <ChatRoom 
-          messages={messages}
-          privateMessages={privateMessages}
-          users={users}
-          typingUsers={typingUsers}
-          currentUserId={socket?.id}
-          currentRoom={currentRoom}
-          unreadCounts={unreadCounts}
-          activeTab={activeTab}
-          selectedUser={selectedUser}
-          onSendMessage={sendMessage}
-          onSendPrivateMessage={sendPrivateMessage}
-          onJoinRoom={handleJoinRoom}
-          onLeaveRoom={handleLeaveRoom}
-          onTyping={setTyping}
-          onLogout={handleLogout}
-          onSelectUser={handleUserSelect}
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
         />
-      )}
+        <Route path="/" element={<Navigate to={user ? "/chat" : "/login"} />} />
+      </Routes>
     </div>
   );
 }

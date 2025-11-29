@@ -1,8 +1,7 @@
 import React from 'react';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
-import UserList from './UserList';
-import RoomList from './RoomList';
+import Sidebar from './Sidebar';
 
 const ChatRoom = ({ 
   messages, 
@@ -36,17 +35,22 @@ const ChatRoom = ({
     : messages;
 
   const chatTitle = activeTab === 'private' && selectedUser
-    ? `Private Chat with ${selectedUser.username}`
+    ? `Chat with ${selectedUser.username}`
     : currentRoom 
       ? `# ${currentRoom}` 
-      : 'Global Chat';
+      : '# Global Chat';
 
   return (
     <div className="chat-room">
-      <RoomList 
-        currentRoom={currentRoom} 
-        onJoinRoom={onJoinRoom} 
+      <Sidebar 
+        currentRoom={currentRoom}
+        users={users}
+        onJoinRoom={onJoinRoom}
         onLeaveRoom={onLeaveRoom}
+        onSelectUser={onSelectUser}
+        selectedUser={selectedUser}
+        unreadCounts={unreadCounts}
+        currentUserId={currentUserId}
       />
       
       <div className="chat-main">
@@ -68,13 +72,6 @@ const ChatRoom = ({
           onTyping={onTyping} 
         />
       </div>
-      
-      <UserList 
-        users={users} 
-        onSelectUser={onSelectUser}
-        selectedUser={selectedUser}
-        unreadCounts={unreadCounts}
-      />
     </div>
   );
 };

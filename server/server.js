@@ -1,4 +1,3 @@
-```javascript
 // server.js - Main server file for Socket.io chat application
 
 const express = require('express');

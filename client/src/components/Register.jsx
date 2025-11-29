@@ -14,7 +14,12 @@ const Register = ({ onLogin }) => {
       const res = await axios.post('http://localhost:5000/api/auth/register', { username, email, password });
       onLogin(res.data.user, res.data.token);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      console.error(err);
+      if (!err.response) {
+        setError('Network error: Unable to reach server. Is the backend running?');
+      } else {
+        setError(err.response?.data?.message || 'Registration failed');
+      }
     }
   };
 

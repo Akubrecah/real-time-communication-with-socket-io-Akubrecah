@@ -61,7 +61,7 @@ body {
   display: flex;
   height: 100%;
   width: 100%;
-  background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95)), url('/whatsapp_bg.png');
+  background-image: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.7)), url('/whatsapp_bg.png');
   background-size: 400px;
   background-repeat: repeat;
   background-position: center;

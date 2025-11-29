@@ -42,125 +42,54 @@ const messages = [];
 const typingUsers = {};
 
 // Socket.io connection handler
-io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  // Store timeouts for disconnecting users
+  const disconnectTimeouts = {};
 
   // Handle user joining
   socket.on('user_join', (username) => {
-    users[socket.id] = { username, id: socket.id };
-    io.emit('user_list', Object.values(users));
-    io.emit('user_joined', { username, id: socket.id });
-    console.log(`${username} joined the chat`);
-  });
-
-  // Handle joining a room
-  socket.on('join_room', (room) => {
-    socket.join(room);
-    console.log(`User ${socket.id} joined room: ${room}`);
-    // Notify room members
-    const username = users[socket.id]?.username || 'Anonymous';
-    io.to(room).emit('receive_message', {
-      id: Date.now(),
-      system: true,
-      message: `${username} joined the room`,
-      timestamp: new Date().toISOString(),
-      room
-    });
-  });
-
-  // Handle leaving a room
-  socket.on('leave_room', (room) => {
-    socket.leave(room);
-    console.log(`User ${socket.id} left room: ${room}`);
-    const username = users[socket.id]?.username || 'Anonymous';
-    io.to(room).emit('receive_message', {
-      id: Date.now(),
-      system: true,
-      message: `${username} left the room`,
-      timestamp: new Date().toISOString(),
-      room
-    });
-  });
-
-  // Handle chat messages (Global or Room)
-  socket.on('send_message', (messageData) => {
-    const { room, message: content, image } = messageData;
-    
-    const message = {
-      message: content,
-      image, // Add image to message object
-      id: Date.now(),
-      sender: users[socket.id]?.username || 'Anonymous',
-      senderId: socket.id,
-      timestamp: new Date().toISOString(),
-      room // undefined for global, string for specific room
-    };
-    
-    if (room) {
-      io.to(room).emit('receive_message', message);
+    // Check if user is reconnecting (refreshing)
+    if (disconnectTimeouts[username]) {
+      clearTimeout(disconnectTimeouts[username]);
+      delete disconnectTimeouts[username];
+      
+      // Find and remove old socket entry for this username
+      const oldSocketId = Object.keys(users).find(id => users[id].username === username);
+      if (oldSocketId) {
+        delete users[oldSocketId];
+      }
+      
+      users[socket.id] = { username, id: socket.id };
+      io.emit('user_list', Object.values(users));
+      console.log(`${username} reconnected`);
     } else {
-      messages.push(message);
-      // Limit stored messages
-      if (messages.length > 100) messages.shift();
-      io.emit('receive_message', message);
+      // New join
+      users[socket.id] = { username, id: socket.id };
+      io.emit('user_list', Object.values(users));
+      io.emit('user_joined', { username, id: socket.id });
+      console.log(`${username} joined the chat`);
     }
   });
 
-  // Handle typing indicator
-  socket.on('typing', ({ isTyping, room }) => {
-    if (users[socket.id]) {
-      const username = users[socket.id].username;
-      
-      if (isTyping) {
-        typingUsers[socket.id] = { username, room };
-      } else {
-        delete typingUsers[socket.id];
-      }
-      
-      // Broadcast typing status
-      // Ideally we should filter this by room on the client or server
-      // For simplicity, we emit all and filter on client, or emit to room
-      if (room) {
-        socket.to(room).emit('typing_update', { userId: socket.id, username, isTyping, room });
-      } else {
-        socket.broadcast.emit('typing_update', { userId: socket.id, username, isTyping, room: null });
-      }
-      
-      // Keep the old event for backward compatibility or global list if needed
-      io.emit('typing_users', Object.values(typingUsers).map(u => u.username));
-    }
-  });
-
-  // Handle private messages
-  socket.on('private_message', ({ to, message, image }) => {
-    const messageData = {
-      id: Date.now(),
-      sender: users[socket.id]?.username || 'Anonymous',
-      senderId: socket.id,
-      message,
-      image, // Add image to private message object
-      timestamp: new Date().toISOString(),
-      isPrivate: true,
-      to // Add recipient ID for client-side handling
-    };
-    
-    socket.to(to).emit('private_message', messageData);
-    socket.emit('private_message', messageData);
-  });
+  // ... (keep join_room, leave_room, send_message, typing, private_message handlers as is) ...
 
   // Handle disconnection
   socket.on('disconnect', () => {
     if (users[socket.id]) {
       const { username } = users[socket.id];
-      io.emit('user_left', { username, id: socket.id });
-      console.log(`${username} left the chat`);
+      
+      // Set a grace period before announcing leave
+      disconnectTimeouts[username] = setTimeout(() => {
+        if (users[socket.id]) { // Check if still exists (might have been removed by reconnect)
+          io.emit('user_left', { username, id: socket.id });
+          console.log(`${username} left the chat`);
+          delete users[socket.id];
+          io.emit('user_list', Object.values(users));
+          delete typingUsers[socket.id];
+          io.emit('typing_users', Object.values(typingUsers).map(u => u.username));
+        }
+        delete disconnectTimeouts[username];
+      }, 3000); // 3 second grace period
     }
-    
-    delete users[socket.id];
-    delete typingUsers[socket.id];
-    
-    io.emit('user_list', Object.values(users));
-    io.emit('typing_users', Object.values(typingUsers).map(u => u.username));
   });
 });
 

@@ -229,6 +229,27 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.login-container {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  padding: 40px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  width: 90%;
+  max-width: 360px; /* Reduced width */
+  z-index: 10;
+}
+
+/* ... headers ... */
+
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* Increased spacing */
+}
+
 .input-group {
   display: flex;
   background: var(--bg-dark);
@@ -254,6 +275,40 @@ body {
 
 .create-room-form input:focus {
   box-shadow: none;
+}
+
+input {
+  padding: 12px 20px; /* Reduced padding */
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 30px; /* Rounded corners */
+  color: var(--text-main);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  width: 100%; /* Force full width for stacking */
+  text-align: center; /* Center aligned text */
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+}
+
+button {
+  padding: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: 30px; /* Rounded corners */
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  width: 100%; /* Force full width */
 }
 
 .create-room-form button {
@@ -452,25 +507,48 @@ body {
 
 .message-input-form {
   padding: 24px 30px;
-  background: transparent; /* Changed from previous */
-  border-top: none; /* Changed from previous */
+  background: transparent;
+  border-top: none;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
 }
 
-.attach-btn {
-  padding: 16px;
-  background: var(--bg-card);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 1.2rem;
+.message-input-form input {
+  flex: 1; /* Take up remaining space */
+  width: auto; /* Override global width: 100% */
+  margin: 0;
+}
+
+.attach-btn, .send-btn {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  color: var(--primary);
+  border: 1px solid var(--border);
   transition: all 0.2s;
+}
+
+.send-btn {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+}
+
+.attach-btn:hover {
+  background: var(--bg-card-hover);
+  transform: scale(1.05);
+}
+
+.send-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 .attach-btn:hover {

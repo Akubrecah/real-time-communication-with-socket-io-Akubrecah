@@ -1,9 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSocket } from './socket/socket';
+import ChatRoom from './components/ChatRoom';
 import './App.css';
 
 function App() {
-  const { isConnected, connect, disconnect, socket } = useSocket();
+  const { 
+    isConnected, 
+    connect, 
+    disconnect, 
+    socket,
+    messages,
+    users,
+    typingUsers,
+    sendMessage,
+    setTyping
+  } = useSocket();
+  
   const [username, setUsername] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -23,40 +35,35 @@ function App() {
 
   return (
     <div className="app-container">
-      <header>
-        <h1>Socket.io Chat</h1>
-        <div className={`status ${isConnected ? 'online' : 'offline'}`}>
-          {isConnected ? 'Connected' : 'Disconnected'}
-        </div>
-      </header>
-
-      <main>
-        {!isLoggedIn ? (
+      {!isLoggedIn ? (
+        <div className="login-screen">
           <div className="login-container">
-            <h2>Join Chat</h2>
+            <h1>Socket.io Chat</h1>
+            <p>Join the conversation</p>
             <form onSubmit={handleLogin}>
               <input
                 type="text"
-                placeholder="Enter username"
+                placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                autoFocus
               />
-              <button type="submit">Join</button>
+              <button type="submit">Join Chat</button>
             </form>
           </div>
-        ) : (
-          <div className="chat-container">
-            <div className="welcome-message">
-              Welcome, <strong>{username}</strong>!
-            </div>
-            <button onClick={handleLogout} className="logout-btn">Leave Chat</button>
-            <div className="debug-info">
-              <p>Socket ID: {socket?.id}</p>
-            </div>
-          </div>
-        )}
-      </main>
+        </div>
+      ) : (
+        <ChatRoom 
+          messages={messages}
+          users={users}
+          typingUsers={typingUsers}
+          currentUserId={socket?.id}
+          onSendMessage={sendMessage}
+          onTyping={setTyping}
+          onLogout={handleLogout}
+        />
+      )}
     </div>
   );
 }

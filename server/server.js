@@ -43,38 +43,80 @@ io.on('connection', (socket) => {
     console.log(`${username} joined the chat`);
   });
 
-  // Handle chat messages
+  // Handle joining a room
+  socket.on('join_room', (room) => {
+    socket.join(room);
+    console.log(`User ${socket.id} joined room: ${room}`);
+    // Notify room members
+    const username = users[socket.id]?.username || 'Anonymous';
+    io.to(room).emit('receive_message', {
+      id: Date.now(),
+      system: true,
+      message: `${username} joined the room`,
+      timestamp: new Date().toISOString(),
+      room
+    });
+  });
+
+  // Handle leaving a room
+  socket.on('leave_room', (room) => {
+    socket.leave(room);
+    console.log(`User ${socket.id} left room: ${room}`);
+    const username = users[socket.id]?.username || 'Anonymous';
+    io.to(room).emit('receive_message', {
+      id: Date.now(),
+      system: true,
+      message: `${username} left the room`,
+      timestamp: new Date().toISOString(),
+      room
+    });
+  });
+
+  // Handle chat messages (Global or Room)
   socket.on('send_message', (messageData) => {
+    const { room, message: content } = messageData;
+    
     const message = {
-      ...messageData,
+      message: content,
       id: Date.now(),
       sender: users[socket.id]?.username || 'Anonymous',
       senderId: socket.id,
       timestamp: new Date().toISOString(),
+      room // undefined for global, string for specific room
     };
     
-    messages.push(message);
-    
-    // Limit stored messages to prevent memory issues
-    if (messages.length > 100) {
-      messages.shift();
+    if (room) {
+      io.to(room).emit('receive_message', message);
+    } else {
+      messages.push(message);
+      // Limit stored messages
+      if (messages.length > 100) messages.shift();
+      io.emit('receive_message', message);
     }
-    
-    io.emit('receive_message', message);
   });
 
   // Handle typing indicator
-  socket.on('typing', (isTyping) => {
+  socket.on('typing', ({ isTyping, room }) => {
     if (users[socket.id]) {
       const username = users[socket.id].username;
       
       if (isTyping) {
-        typingUsers[socket.id] = username;
+        typingUsers[socket.id] = { username, room };
       } else {
         delete typingUsers[socket.id];
       }
       
-      io.emit('typing_users', Object.values(typingUsers));
+      // Broadcast typing status
+      // Ideally we should filter this by room on the client or server
+      // For simplicity, we emit all and filter on client, or emit to room
+      if (room) {
+        socket.to(room).emit('typing_update', { userId: socket.id, username, isTyping, room });
+      } else {
+        socket.broadcast.emit('typing_update', { userId: socket.id, username, isTyping, room: null });
+      }
+      
+      // Keep the old event for backward compatibility or global list if needed
+      io.emit('typing_users', Object.values(typingUsers).map(u => u.username));
     }
   });
 
@@ -87,6 +129,7 @@ io.on('connection', (socket) => {
       message,
       timestamp: new Date().toISOString(),
       isPrivate: true,
+      to // Add recipient ID for client-side handling
     };
     
     socket.to(to).emit('private_message', messageData);
@@ -105,7 +148,7 @@ io.on('connection', (socket) => {
     delete typingUsers[socket.id];
     
     io.emit('user_list', Object.values(users));
-    io.emit('typing_users', Object.values(typingUsers));
+    io.emit('typing_users', Object.values(typingUsers).map(u => u.username));
   });
 });
 

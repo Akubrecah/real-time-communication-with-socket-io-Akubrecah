@@ -80,6 +80,22 @@ A modern, full-stack real-time messaging platform built with the MERN stack (Mon
 
 ## 📂 Project Structure
 
-- `client/`: React frontend application
-- `server/`: Node.js/Express backend
-- `screenshots/`: Application preview images
+```
+├── client/                 # React Frontend
+│   ├── public/            # Static assets (backgrounds)
+│   ├── src/
+│   │   ├── components/    # React Components (ChatRoom, Login, etc.)
+│   │   ├── socket/        # Socket.io client configuration
+│   │   ├── App.jsx        # Main App Component & Routing
+│   │   ├── App.css        # Global Styles
+│   │   └── main.jsx       # Entry Point
+│   └── package.json
+├── server/                 # Node.js Backend
+│   ├── models/            # Mongoose Models (User)
+│   ├── routes/            # Express Routes (Auth)
+│   ├── server.js          # Main Server Entry Point (Socket.io logic)
+│   ├── .env               # Environment Variables
+│   └── package.json
+├── screenshots/           # Application preview images
+└── README.md              # Project Documentation
+```
